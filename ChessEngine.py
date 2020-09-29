@@ -25,6 +25,7 @@ class GameState():
         self.moveLog = []
         self.turnCounter = 0
         self.secondMove = 0
+        self.pieceCaptured = []
 
     """take a move as a parameter and executes it"""
 
@@ -40,6 +41,17 @@ class GameState():
             self.turnCounter += 1
             self.secondMove = 0
 
+    """take a capture move as a parameter and executes it"""
+
+    def captureMove(self, move):  # if capture happens the turn changes
+        self.board[move.startRow][move.startCol] = "--"
+        self.pieceCaptured.append(self.board[move.endRow][move.endCol])
+        self.board[move.endRow][move.endCol] = move.pieceMoved
+        self.moveLog.append(move)
+        self.whiteToMove = not self.whiteToMove
+        self.turnCounter += 1
+        self.secondMove = 0
+
     """undo previous move"""
 
     def undoMove(self):
@@ -48,7 +60,7 @@ class GameState():
             self.board[move.startRow][move.startCol] = move.pieceMoved
             self.board[move.endRow][move.endCol] = move.pieceCaptured
             # definire undo e change turn back if count==0
-            if move.pieceMoved[1]=='F':
+            if move.pieceMoved[1] == 'F':
                 self.secondMove = 0
                 self.whiteToMove = not self.whiteToMove
             elif self.secondMove == 0:
@@ -57,17 +69,15 @@ class GameState():
                 self.secondMove = 1
             elif self.secondMove == 1:
                 self.secondMove = 0
-            # TODO turn counter
 
     def getValidMoves(self):
-        moves = self.getAllPossibleMoves()
-        # return self.getAllPossibleMoves()
-        # oppMoves=self.getAllPossibleMoves() TODO check for checmate
+        moves, capture = self.getAllPossibleMoves()
         self.squareUnderAttack()
-        return moves
+        return moves, capture
 
     def getAllPossibleMoves(self):
         moves = []
+        capture = []
         # if self.turnCounter==0:
         #     #decide to pass
         # else:
@@ -83,10 +93,12 @@ class GameState():
                                 self.getMoves(r, c, moves)
                         else:
                             self.getMoves(r, c, moves)
+                            self.getCaptureMoves(r, c, capture)
                     elif piece == 'F' and self.secondMove == 0:  # calculate Flagship moves only in the first step of
                         # the turn
                         self.getMoves(r, c, moves)
-        return moves
+                        self.getCaptureMoves(r, c, capture)
+        return moves, capture
 
     def squareUnderAttack(self):
         pass
@@ -105,19 +117,20 @@ class GameState():
                         break
                 else:
                     break
-        enemy = 's' if self.whiteToMove else 'g' #check who is the enemy
+
+    def getCaptureMoves(self, r, c, capture):
+        enemy = 's' if self.whiteToMove else 'g'  # check who is the enemy
         # possible captures
         if self.secondMove == 0:  # it's possible to eat only in the first move of the turn
             for i in range(0, 2):
-                newCol = c-1 if i == 0 else c+1  # c-1 -> left | c+1 -> right
-                if newCol >= 0:
-                    if r-1 >= 0:  # top
+                newCol = c - 1 if i == 0 else c + 1  # c-1 -> left | c+1 -> right
+                if 0 <= newCol <= 10:
+                    if r - 1 >= 0:  # top
                         if self.board[r - 1][newCol][0] == enemy:
-                            moves.append(Move((r, c), (r - 1, newCol), self.board))
-                    if r+1 <= 10:  # bottom
+                            capture.append(Move((r, c), (r - 1, newCol), self.board))
+                    if r + 1 <= 10:  # bottom
                         if self.board[r + 1][newCol][0] == enemy:
-                            moves.append(Move((r, c), (r + 1, newCol), self.board))
-
+                            capture.append(Move((r, c), (r + 1, newCol), self.board))
 
 
 class Move():
