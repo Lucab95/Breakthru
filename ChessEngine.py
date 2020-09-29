@@ -47,10 +47,16 @@ class GameState():
             move = self.moveLog.pop()
             self.board[move.startRow][move.startCol] = move.pieceMoved
             self.board[move.endRow][move.endCol] = move.pieceCaptured
-
             # definire undo e change turn back if count==0
-            self.whiteToMove = not self.whiteToMove  # the turn back to the user
-            self.turnCounter -= 1
+            if move.pieceMoved[1]=='F':
+                self.secondMove = 0
+                self.whiteToMove = not self.whiteToMove
+            elif self.secondMove == 0:
+                self.whiteToMove = not self.whiteToMove  # the turn back to the user
+                self.turnCounter -= 1
+                self.secondMove = 1
+            elif self.secondMove == 1:
+                self.secondMove = 0
             # TODO turn counter
 
     def getValidMoves(self):
@@ -99,27 +105,24 @@ class GameState():
                         break
                 else:
                     break
+        enemy = 's' if self.whiteToMove else 'g' #check who is the enemy
+        # possible captures
+        if self.secondMove == 0:  # it's possible to eat only in the first move of the turn
+            for i in range(0, 2):
+                newCol = c-1 if i == 0 else c+1  # c-1 -> left | c+1 -> right
+                if newCol >= 0:
+                    if r-1 >= 0:  # top
+                        if self.board[r - 1][newCol][0] == enemy:
+                            moves.append(Move((r, c), (r - 1, newCol), self.board))
+                    if r+1 <= 10:  # bottom
+                        if self.board[r + 1][newCol][0] == enemy:
+                            moves.append(Move((r, c), (r + 1, newCol), self.board))
 
-    # def getFlagMoves(self, r, c, moves):
-    #     directions = ((-1, 0), (0, -1), (1, 0), (0, 1))
-    #     for d in directions:
-    #         for i in range(1, 10):
-    #             endRow = r + d[0] * i
-    #             endCol = c + d[1] * i
-    #             if 0 <= endRow <= 10 and 0 <= endCol <= 10:
-    #                 endPiece = self.board[endRow][endCol]
-    #                 if endPiece == "--":
-    #                     moves.append(Move((r, c), (endRow, endCol), self.board))
-    #                 else:
-    #                     break
-    #             else:
-    #                 break
 
 
 class Move():
     # maps keys to values
     # key : value
-
     ranksToRows = {"1": 10, "2": 9, "3": 8, "4": 7, "5": 6, "6": 5, "7": 4, "8": 3, "9": 2, "10": 1, "11": 0}
     rowToRanks = {v: k for k, v in ranksToRows.items()}
     filesToCols = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7, "i": 8, "j": 9, "k": 10}
