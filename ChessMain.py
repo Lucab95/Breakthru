@@ -3,6 +3,8 @@ handle user input and display the State
 """
 import ChessEngine
 import pygame as p
+from tkinter import *
+from tkinter import messagebox
 
 WIDTH = HEIGHT = 512
 DIMENSION = 11
@@ -17,11 +19,19 @@ def loadImages():
         IMAGES[piece] = p.transform.scale(p.image.load("images/" + piece + ".png"), (SQ_SIZE, SQ_SIZE))
 
 
+"""draw condition"""
+def staleMate(window):
+    messagebox.showinfo("Draw", "No possible moves")
+    window.deiconify()
+    window.destroy()
+    window.quit()
+    return True
+
+
 def main():
     p.init()  # Initializing library
     screen = p.display.set_mode((WIDTH, HEIGHT))  # Initializing screen
     clock = p.time.Clock()
-    # p.display.flip()
     screen.fill(p.Color("black"))
     gs = ChessEngine.GameState()
     validMoves, captureMoves = gs.getValidMoves()
@@ -31,6 +41,11 @@ def main():
     running = True
     sqSelected = ()  # tracks the last user's click (row,col)
     playerClicks = []  # track the clicks [(x,y),(x',y')]
+
+    # messagebox part
+    window = Tk()
+    window.eval("tk::PlaceWindow %s center" % window.winfo_toplevel())
+    window.withdraw()
 
     while running:
         drawGameState(screen, gs, validMoves, captureMoves, sqSelected)
@@ -52,13 +67,15 @@ def main():
                 if len(playerClicks) == 2:  # 2nd click case
                     move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
                     print(move.getNotation())
+                    if (len(captureMoves) == 0 and len(validMoves) == 0):
+                        staleMate(window)
                     if move in validMoves:
-                        gs.makeMove(move)
+                        gs.makeMove(move, window)
                         moveMade = True
                         sqSelected = ()  # reset
                         playerClicks = []
                     elif move in captureMoves:
-                        gs.captureMove(move)
+                        gs.captureMove(move, window)
                         moveMade = True
                         sqSelected = ()  # reset
                         playerClicks = []

@@ -1,5 +1,23 @@
 """log of moves and info about the state of the game"""
 import numpy as np
+from tkinter import messagebox
+
+
+def goldWin(window,flagship):
+    if flagship:
+        messagebox.showinfo("Gold player wins", "the flagship escaped from the silver fleet")
+    else:
+        messagebox.showinfo("Gold player wins", "the silver fleet was destroyed")
+    window.deiconify()
+    window.destroy()
+    window.quit()
+
+
+def silverWin(window):
+    messagebox.showinfo("Silver player wins", "the flagship was captured")
+    window.deiconify()
+    window.destroy()
+    window.quit()
 
 
 class GameState():
@@ -26,31 +44,48 @@ class GameState():
         self.turnCounter = 0
         self.secondMove = 0
         self.pieceCaptured = []
+        self.flagShipLocation = ()
+        self.silverFleet = 20
+
 
     """take a move as a parameter and executes it"""
 
-    def makeMove(self, move):
+    def makeMove(self, move, window):
         self.board[move.startRow][move.startCol] = "--"
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.moveLog.append(move)  # history and undo
         if move.pieceMoved[1] == 'F':
             self.secondMove += 1
+            if (move.endCol==10 or move.endCol==0) or (move.endRow==0 or move.endRow==10):
+                goldWin(window, True)
         self.secondMove += 1
         if self.secondMove == 2:  # allows the double move to the small pawn
             self.whiteToMove = not self.whiteToMove
             self.turnCounter += 1
             self.secondMove = 0
 
+
+
     """take a capture move as a parameter and executes it"""
 
-    def captureMove(self, move):  # if capture happens the turn changes
+    def captureMove(self, move, window):  # if capture happens the turn changes
         self.board[move.startRow][move.startCol] = "--"
         self.pieceCaptured.append(self.board[move.endRow][move.endCol])
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.moveLog.append(move)
+        if self.pieceCaptured[-1][1]=='F':
+            silverWin(window)
+        if move.pieceMoved[1] == 'F':
+            if (move.endCol == 10 or move.endCol == 0) or (move.endRow == 0 or move.endRow == 10):
+                goldWin(window, True)
+        if self.pieceCaptured[-1][1] == 's':
+            self.silverFleet -= 1
+            if self.silverFleet == 0:
+                goldWin(window, False)
         self.whiteToMove = not self.whiteToMove
         self.turnCounter += 1
         self.secondMove = 0
+
 
     """undo previous move"""
 
