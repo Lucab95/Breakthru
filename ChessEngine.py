@@ -1,23 +1,5 @@
 """log of moves and info about the state of the game"""
-import numpy as np
 from tkinter import messagebox
-
-
-def goldWin(window,flagship):
-    if flagship:
-        messagebox.showinfo("Gold player wins", "the flagship escaped from the silver fleet")
-    else:
-        messagebox.showinfo("Gold player wins", "the silver fleet was destroyed")
-    window.deiconify()
-    window.destroy()
-    window.quit()
-
-
-def silverWin(window):
-    messagebox.showinfo("Silver player wins", "the flagship was captured")
-    window.deiconify()
-    window.destroy()
-    window.quit()
 
 
 class GameState():
@@ -39,14 +21,30 @@ class GameState():
             ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"],
 
         ]
+        # self.board FOR LETTERS = [
+        #     ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "sP", "sP", "sP", "sP", "sP", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "sP", "--", "--", "gP", "gP", "gP", "--", "--", "sP", "--", "--"],
+        #     ["--", "--", "sP", "--", "gP", "--", "--", "--", "gP", "--", "sP", "--", "--"],
+        #     ["--", "--", "sP", "--", "gP", "--", "gFS", "--", "gP", "--", "sP", "--", "--"],
+        #     ["--", "--", "sP", "--", "gP", "--", "--", "--", "gP", "--", "sP", "--", "--"],
+        #     ["--", "--", "sP", "--", "--", "gP", "gP", "gP", "--", "--", "sP", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "sP", "sP", "sP", "sP", "sP", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"]
+        #
+        # ]
         self.whiteToMove = True
         self.moveLog = []
         self.turnCounter = 0
         self.secondMove = 0
         self.pieceCaptured = []
-        self.flagShipLocation = ()
         self.silverFleet = 20
-
+        self.goldFleet = 12
+        self.state = True  # used to define the gameState True -> game False-> end game
 
     """take a move as a parameter and executes it"""
 
@@ -56,15 +54,13 @@ class GameState():
         self.moveLog.append(move)  # history and undo
         if move.pieceMoved[1] == 'F':
             self.secondMove += 1
-            if (move.endCol==10 or move.endCol==0) or (move.endRow==0 or move.endRow==10):
+            if (move.endCol == 10 or move.endCol == 0) or (move.endRow == 0 or move.endRow == 10):
                 goldWin(window, True)
         self.secondMove += 1
         if self.secondMove == 2:  # allows the double move to the small pawn
             self.whiteToMove = not self.whiteToMove
             self.turnCounter += 1
             self.secondMove = 0
-
-
 
     """take a capture move as a parameter and executes it"""
 
@@ -73,19 +69,24 @@ class GameState():
         self.pieceCaptured.append(self.board[move.endRow][move.endCol])
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.moveLog.append(move)
-        if self.pieceCaptured[-1][1]=='F':
-            silverWin(window)
+        # if flagship get captured
+        if self.pieceCaptured[-1][1] == 'F':
+            self.silverWin(window)
+        # if flagship reach the border
         if move.pieceMoved[1] == 'F':
             if (move.endCol == 10 or move.endCol == 0) or (move.endRow == 0 or move.endRow == 10):
-                goldWin(window, True)
+                self.goldWin(window, True)
+        # if flagship reach the border
         if self.pieceCaptured[-1][1] == 's':
             self.silverFleet -= 1
             if self.silverFleet == 0:
-                goldWin(window, False)
+                self.goldWin(window, False)
+        #update number of piece for goldFleet
+        if self.pieceCaptured[-1]=='gP':
+            self.goldFleet -= 1
         self.whiteToMove = not self.whiteToMove
         self.turnCounter += 1
         self.secondMove = 0
-
 
     """undo previous move"""
 
@@ -116,6 +117,7 @@ class GameState():
         # if self.turnCounter==0:
         #     #decide to pass
         # else:
+        # TODO add turn as parameter if i want to calculate specifical moves for a plaayer
         for r in range(len(self.board)):  # number of rows
             for c in range(len(self.board[r])):  # number of columns
                 turn = self.board[r][c][0]
@@ -166,6 +168,25 @@ class GameState():
                     if r + 1 <= 10:  # bottom
                         if self.board[r + 1][newCol][0] == enemy:
                             capture.append(Move((r, c), (r + 1, newCol), self.board))
+
+
+    """Define conditions to make the game end """
+    def goldWin(self, window, flagship):
+        if flagship:
+            messagebox.showinfo("Gold player wins", "the flagship escaped from the silver fleet")
+        else:
+            messagebox.showinfo("Gold player wins", "the silver fleet was destroyed")
+        window.deiconify()
+        window.destroy()
+        window.quit()
+        self.state = False
+
+    def silverWin(self, window):
+        messagebox.showinfo("Silver player wins", "the flagship was captured")
+        window.deiconify()
+        window.destroy()
+        window.quit()
+        self.state = False
 
 
 class Move():

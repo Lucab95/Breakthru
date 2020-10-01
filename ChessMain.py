@@ -5,6 +5,8 @@ import ChessEngine
 import pygame as p
 from tkinter import *
 from tkinter import messagebox
+import sys
+import os
 
 WIDTH = HEIGHT = 512
 DIMENSION = 11
@@ -29,8 +31,10 @@ def staleMate(window):
 
 
 def main():
+    # if getattr(sys, 'frozen', False):
+    #     os.chdir(sys._MEIPASS)
     p.init()  # Initializing library
-    screen = p.display.set_mode((WIDTH, HEIGHT))  # Initializing screen
+    screen = p.display.set_mode((WIDTH+100, HEIGHT+100))  # Initializing screen
     clock = p.time.Clock()
     screen.fill(p.Color("black"))
     gs = ChessEngine.GameState()
