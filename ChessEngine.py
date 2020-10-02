@@ -37,56 +37,93 @@ class GameState():
         #     ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"]
         #
         # ]
-        self.whiteToMove = True
+        self.goldToMove = True
         self.moveLog = []
         self.turnCounter = 0
         self.secondMove = 0
         self.pieceCaptured = []
         self.silverFleet = 20
         self.goldFleet = 12
+        self.flagShip= 1
         self.state = True  # used to define the gameState True -> game False-> end game
 
-    """take a move as a parameter and executes it"""
+    """take a move as a parameter and executes it, include capture option"""
 
     def makeMove(self, move, window):
         self.board[move.startRow][move.startCol] = "--"
+        if self.board[move.endRow][move.endCol] != "--":
+            self.pieceCaptured.append(self.board[move.endRow][move.endCol])
+            # should be defined inside evaluation function
+            if self.pieceCaptured[-1][1] == 'F':
+                self.silverWin(window)
+            if move.pieceMoved[1] == 'F':
+                if (move.endCol == 10 or move.endCol == 0) or (move.endRow == 0 or move.endRow == 10):
+                    self.goldWin(window, True)
+            # if flagship reach the border
+            if self.pieceCaptured[-1][1] == 's':
+                self.silverFleet -= 1
+                if self.silverFleet == 0:
+                    self.goldWin(window, False)
+            if self.pieceCaptured[-1] == 'gP':
+                self.goldFleet -= 1
+            self.secondMove=2
+        else:
+            if move.pieceMoved[1] == 'F':
+                self.secondMove = 2
+                if (move.endCol == 10 or move.endCol == 0) or (move.endRow == 0 or move.endRow == 10):
+                    self.goldWin(window, True)
+            self.secondMove+=1
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.moveLog.append(move)  # history and undo
-        if move.pieceMoved[1] == 'F':
-            self.secondMove += 1
-            if (move.endCol == 10 or move.endCol == 0) or (move.endRow == 0 or move.endRow == 10):
-                goldWin(window, True)
-        self.secondMove += 1
         if self.secondMove == 2:  # allows the double move to the small pawn
-            self.whiteToMove = not self.whiteToMove
+            self.goldToMove = not self.goldToMove
             self.turnCounter += 1
             self.secondMove = 0
 
-    """take a capture move as a parameter and executes it"""
 
-    def captureMove(self, move, window):  # if capture happens the turn changes
-        self.board[move.startRow][move.startCol] = "--"
-        self.pieceCaptured.append(self.board[move.endRow][move.endCol])
-        self.board[move.endRow][move.endCol] = move.pieceMoved
-        self.moveLog.append(move)
-        # if flagship get captured
-        if self.pieceCaptured[-1][1] == 'F':
-            self.silverWin(window)
-        # if flagship reach the border
-        if move.pieceMoved[1] == 'F':
-            if (move.endCol == 10 or move.endCol == 0) or (move.endRow == 0 or move.endRow == 10):
-                self.goldWin(window, True)
-        # if flagship reach the border
-        if self.pieceCaptured[-1][1] == 's':
-            self.silverFleet -= 1
-            if self.silverFleet == 0:
-                self.goldWin(window, False)
-        #update number of piece for goldFleet
-        if self.pieceCaptured[-1]=='gP':
-            self.goldFleet -= 1
-        self.whiteToMove = not self.whiteToMove
-        self.turnCounter += 1
-        self.secondMove = 0
+
+    """take a capture move as a parameter and executes it"""
+    # def makeMove(self, move, window):
+    #     self.board[move.startRow][move.startCol] = "--"
+    #     if self.board[move.endRow][move.endCol] != "--":
+    #         self.pieceCaptured.append(self.board[move.endRow][move.endCol])
+
+
+        # self.board[move.endRow][move.endCol] = move.pieceMoved
+        # self.moveLog.append(move)  # history and undo
+        # if move.pieceMoved[1] == 'F':
+        #     self.secondMove += 1
+        #     if (move.endCol == 10 or move.endCol == 0) or (move.endRow == 0 or move.endRow == 10):
+        #         self.goldWin(window, True)
+        # self.secondMove += 1
+        # if self.secondMove == 2:  # allows the double move to the small pawn
+        #     self.goldToMove = not self.goldToMove
+        #     self.turnCounter += 1
+        #     self.secondMove = 0
+    """take a move as a parameter and executes it"""
+    # def captureMove(self, move, window):  # if capture happens the turn changes
+    #     self.board[move.startRow][move.startCol] = "--"
+    #     self.pieceCaptured.append(self.board[move.endRow][move.endCol])
+    #     self.board[move.endRow][move.endCol] = move.pieceMoved
+    #     self.moveLog.append(move)
+    #     # if flagship get captured
+    #     if self.pieceCaptured[-1][1] == 'F':
+    #         self.silverWin(window)
+    #     # if flagship reach the border
+    #     if move.pieceMoved[1] == 'F':
+    #         if (move.endCol == 10 or move.endCol == 0) or (move.endRow == 0 or move.endRow == 10):
+    #             self.goldWin(window, True)
+    #     # if flagship reach the border
+    #     if self.pieceCaptured[-1][1] == 's':
+    #         self.silverFleet -= 1
+    #         if self.silverFleet == 0:
+    #             self.goldWin(window, False)
+    #     #update number of piece for goldFleet
+    #     if self.pieceCaptured[-1]=='gP':
+    #         self.goldFleet -= 1
+    #     self.goldToMove = not self.goldToMove
+    #     self.turnCounter += 1
+    #     self.secondMove = 0
 
     """undo previous move"""
 
@@ -98,9 +135,9 @@ class GameState():
             # definire undo e change turn back if count==0
             if move.pieceMoved[1] == 'F':
                 self.secondMove = 0
-                self.whiteToMove = not self.whiteToMove
+                self.goldToMove = not self.goldToMove
             elif self.secondMove == 0:
-                self.whiteToMove = not self.whiteToMove  # the turn back to the user
+                self.goldToMove = not self.goldToMove  # the turn back to the user
                 self.turnCounter -= 1
                 self.secondMove = 1
             elif self.secondMove == 1:
@@ -121,7 +158,7 @@ class GameState():
         for r in range(len(self.board)):  # number of rows
             for c in range(len(self.board[r])):  # number of columns
                 turn = self.board[r][c][0]
-                if (turn == 'g' and self.whiteToMove) or (turn == 's' and not self.whiteToMove):
+                if (turn == 'g' and self.goldToMove) or (turn == 's' and not self.goldToMove):
                     piece = self.board[r][c][1]
                     if piece == 'P':
                         if self.secondMove == 1:
@@ -156,7 +193,7 @@ class GameState():
                     break
 
     def getCaptureMoves(self, r, c, capture):
-        enemy = 's' if self.whiteToMove else 'g'  # check who is the enemy
+        enemy = 's' if self.goldToMove else 'g'  # check who is the enemy
         # possible captures
         if self.secondMove == 0:  # it's possible to eat only in the first move of the turn
             for i in range(0, 2):
@@ -219,3 +256,24 @@ class Move():
 
     def getRankFile(self, r, c):
         return self.colsToFiles[c] + self.rowToRanks[r]
+
+class AI():
+    def __init__(self, depth):
+        self.evalValue = 0
+        self.ControlGold = True
+        self.gs = GameState()
+        self.maxDepth = depth
+
+    def evaluationFunction(self, validMoves, captureMoves):
+        self.evalValue = 5 * (self.gs.goldFleet - self.gs.silverFleet) + 60 * self.gs.flagShip + len(validMoves) + len(captureMoves)
+        return self.evalValue
+
+    def minMax(self, depth, validMoves, captureMoves):
+        if depth == self.maxDepth or self.gs.state == False:
+            return self.evaluationFunction(validMoves, captureMoves)
+        # evalscore,  move = self.minMax(0,)
+        #prima funz
+
+
+
+        # best_value = float('-inf') if is_max_turn else float('inf')

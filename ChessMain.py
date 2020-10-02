@@ -13,6 +13,7 @@ DIMENSION = 11
 SQ_SIZE = HEIGHT // DIMENSION
 MAX_FPS = 15
 IMAGES = {}
+MINMAX_DEPTH = 2
 
 
 def loadImages():
@@ -34,18 +35,21 @@ def main():
     # if getattr(sys, 'frozen', False):
     #     os.chdir(sys._MEIPASS)
     p.init()  # Initializing library
-    screen = p.display.set_mode((WIDTH+100, HEIGHT+100))  # Initializing screen
+    screen = p.display.set_mode((WIDTH, HEIGHT))  # Initializing screen
     clock = p.time.Clock()
     screen.fill(p.Color("black"))
     gs = ChessEngine.GameState()
     validMoves, captureMoves = gs.getValidMoves()
+
+
     moveMade = False  # flag for when we do a move
     print(gs.board)
     loadImages()  # do it only once
     running = True
     sqSelected = ()  # tracks the last user's click (row,col)
     playerClicks = []  # track the clicks [(x,y),(x',y')]
-
+    #initialize the AI
+    AI = ChessEngine.AI(MINMAX_DEPTH)
     # messagebox part
     window = Tk()
     window.eval("tk::PlaceWindow %s center" % window.winfo_toplevel())
@@ -56,12 +60,18 @@ def main():
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
+            # elif gs.goldToMove and AI.ControlGold:
+            #         # AI.evaluationFunction(validMoves,captureMoves)
+            #         move = AI.minMax(0, validMoves, captureMoves)
+            #         gs.captureMove(move, window)
+            #         moveMade = True
+            #         sqSelected = ()  # reset
+            #         playerClicks = []
             elif e.type == p.MOUSEBUTTONDOWN:
                 location = p.mouse.get_pos()  # get x,y location of mouse
                 col = location[0] // SQ_SIZE
                 row = location[1] // SQ_SIZE
                 print("clicked row", row, "col", col)
-
                 if sqSelected == (row, col):  # double click on the same one -> clear
                     sqSelected = ()
                     playerClicks = []
@@ -71,7 +81,7 @@ def main():
                 if len(playerClicks) == 2:  # 2nd click case
                     move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
                     print(move.getNotation())
-                    if (len(captureMoves) == 0 and len(validMoves) == 0):
+                    if len(captureMoves) == 0 and len(validMoves) == 0:
                         staleMate(window)
                     if move in validMoves:
                         gs.makeMove(move, window)
@@ -79,7 +89,7 @@ def main():
                         sqSelected = ()  # reset
                         playerClicks = []
                     elif move in captureMoves:
-                        gs.captureMove(move, window)
+                        gs.makeMove(move, window)
                         moveMade = True
                         sqSelected = ()  # reset
                         playerClicks = []
@@ -106,7 +116,7 @@ def main():
 def highlightSquares(screen, gs, validMoves, sqSelected, color):
     if sqSelected != ():
         r, c, = sqSelected
-        if gs.board[r][c][0] == ('g' if gs.whiteToMove else 's'):  # selected Square is a piece that can be moves
+        if gs.board[r][c][0] == ('g' if gs.goldToMove else 's'):  # selected Square is a piece that can be moves
             s = p.Surface((SQ_SIZE, SQ_SIZE))
             s.set_alpha(100)  # transparency value -> 0 transparent 255 solid
             s.fill(p.Color('green'))
@@ -148,7 +158,6 @@ def drawPieces(screen, board):
         for c in range(DIMENSION):
             piece = board[r][c]
             if piece != "--":
-                # print("pedina  " + )
                 screen.blit(IMAGES[piece], p.Rect(c * SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 
