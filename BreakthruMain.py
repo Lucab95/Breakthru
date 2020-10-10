@@ -15,7 +15,7 @@ DIMENSION = 11
 SQ_SIZE = HEIGHT // DIMENSION
 MAX_FPS = 15
 IMAGES = {}
-MINMAX_DEPTH = 1
+MINMAX_DEPTH = 3
 
 
 def loadImages():
@@ -52,8 +52,8 @@ def main():
     sqSelected = ()  # tracks the last user's click (row,col)
     playerClicks = []  # track the clicks [(x,y),(x',y')]
     # initialize the AI
-    AI = AIMiniMax.AI(MINMAX_DEPTH, 'g')
-    AI2 = AIMiniMax.AI(MINMAX_DEPTH, 'g')
+    AI = AIMiniMax.AI('g')
+    AI2 = AIMiniMax.AI('g')
     AI2.ControlGold = False
     # messagebox part
     # window = Tk()
@@ -71,8 +71,8 @@ def main():
                 elif gameState.goldToMove and AI.ControlGold and monitor :
                     monitor = False
                     # #     # AI.evaluationFunction(validMoves,captureMoves)
-                    x, move = AI.chooseMove(validMoves, captureMoves, gameState, True)
-                    print(x, "move: ", move)
+                    move = AI.chooseMove(gameState, True)
+                    # print("move: ", move)
                     print("AI1")
                     # move = AI.basicMiniMax(0, validMoves, captureMoves)
                     # print("moveee gold", gameState.goldToMove)
@@ -91,10 +91,10 @@ def main():
                     playerClicks = []
                 elif gameState.goldToMove == False and AI2.ControlGold == False and monitor:
                     monitor = False
-                    print("aI2")
+                    print("\n aI2")
                     #     # AI.evaluationFunction(validMoves,captureMoves)
-                    # move = AI2.chooseMove(0, validMoves, captureMoves, True)
-                    x, move = AI2.chooseMove(validMoves, captureMoves, gameState, True)
+                    move = AI2.chooseMove(gameState, True)
+                    # x, move = AI2.chooseMove(validMoves, captureMoves, gameState, True)
                     # move = AI.basicMiniMax(0, validMoves, captureMoves)
                     gameState.makeMove(move)
                     moveMade = True
