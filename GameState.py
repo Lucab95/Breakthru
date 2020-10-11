@@ -27,7 +27,8 @@ class GameState:
             ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
             ]
         )
-
+        self.letters = (["A","B","C","D","E","F","G","H","I","J","K"])
+        self.numbers = (["11","10", "9", "8", "7", "6", "5", "4", "3", "2", "1"])
         self.goldToMove = True
         self.moveLog = []
         self.turnCounter = 0
@@ -36,6 +37,8 @@ class GameState:
         self.silverFleet = 20
         self.goldFleet = 12
         self.flagShip = 1
+        self.flagShipMoves = []
+        self.history =  []
         #TODO decide the state using a function and check evaluation not in move
         self.state = True  # used to define the gameState True -> game False-> end game
         self.DEBUG = True
@@ -44,11 +47,16 @@ class GameState:
 
     def makeMove(self, move):
         self.board[move.startRow][move.startCol] = "-"
+        turn = 'Gold' if self.goldToMove else 'Silver'
         if self.DEBUG:
             if move.pieceCaptured == "-":
                 print(move.pieceMoved,  move.getNotation() + "  " + str(self.secondMove), self.goldToMove)
+                self.history.append(turn + " move: " + move.pieceMoved + " " + move.getNotation())
             else:
                 print(move.pieceMoved, move.getNotation() + "  " + str(self.secondMove), self.goldToMove ,"captured", move.pieceCaptured)
+                # self.history.append(turnmove.pieceMoved +" " + move.getNotation() + " move " + str(
+                #     self.secondMove) +" " + turn + "turn" + "captured" + move.pieceCaptured)
+                self.history.append(turn + " captured " + move.pieceCaptured +" move: "+move.pieceMoved + " "+ move.getNotation() )
         self.moveCost(move)
 
             #TODO WINNING CONDITIONS should be defined inside evaluation function
@@ -159,8 +167,8 @@ class GameState:
                             self.getCaptureMoves(r, c, capture)
                     elif piece == 'F' and self.secondMove == 0:  # calculate Flagship moves only in the first step of
                         # the turn
-                        diffmo= self.getMoves(r, c, moves)
-                        diffca= self.getCaptureMoves(r, c, capture)
+                        diffmo = self.getMoves(r, c, moves)
+                        diffca = self.getCaptureMoves(r, c, capture)
                         if diffmo == 0 and diffca == 0:
                             print("no moves")
                         # print(self.getMoves(r, c, moves))
