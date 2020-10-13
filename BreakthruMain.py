@@ -5,12 +5,7 @@ from pygame import font
 
 import GameState
 import pygame as p
-# from tkinter import *
-# from tkinter import messagebox
 import AIMiniMax
-import time
-import sys
-import os
 
 WIDTH = HEIGHT = 512
 INFOWIDTH = 400
@@ -19,7 +14,7 @@ SQ_SIZE = HEIGHT // DIMENSION
 LABEL = SQ_SIZE
 MAX_FPS = 15
 IMAGES = {}
-MINMAX_DEPTH = 3
+MINMAX_DEPTH = 2
 
 
 def loadImages():
@@ -49,7 +44,7 @@ def main():
     gameState = GameState.GameState()
     validMoves, captureMoves = gameState.getValidMoves()
 
-    print(len(validMoves))
+    # print(len(validMoves))
     moveMade = False  # flag for when we do a move
     print(gameState.board)
     loadImages()  # do it only once
@@ -58,9 +53,9 @@ def main():
     playerClicks = []  # track the clicks [(x,y),(x',y')]
     # initialize the AI
     AI = AIMiniMax.AI('g')
-    AI.ControlGold = False
-    # AI2 = AIMiniMax.AI('g')
-    # AI2.ControlGold = False
+    AI.ControlGold = True
+    AI2 = AIMiniMax.AI('g')
+    AI2.ControlGold = False
 
     # messagebox part
     # window = Tk()
@@ -70,7 +65,7 @@ def main():
     while running:
         requiredTime = AI.timeRequired
         drawGameState(screen, gameState, validMoves, captureMoves, sqSelected, requiredTime)
-        if gameState.state:
+        if gameState.endGame:
             if gameState.turnCounter != 0:
                 for e in p.event.get():
                     if e.type == p.QUIT:
@@ -78,37 +73,26 @@ def main():
 
                     elif gameState.goldToMove and AI.ControlGold and monitor:
                         monitor = False
-                        # #     # AI.evaluationFunction(validMoves,captureMoves)
-                        move = AI.chooseMove(gameState, True)
-
-                        # print("move: ", move)
-                        print("AI1")
-                        # move = AI.basicMiniMax(0, validMoves, captureMoves)
-                        # print("moveee gold", gameState.goldToMove)
-                        # #     print("Ai", gameState.secondMove, "movegold", gameState.goldToMove)
-                        # #     # print(dict(map(reversed, enumerate(validMoves))))
-                        # #     # print(dict(zip(range(len(validMoves)),validMoves)))
-                        # #     # print(dict(captureMoves[i:i + 2] for i in range(0, len(captureMoves), 2)))
-                        # #     gameState.makeMove(move, window)
-                        # #     moveMade = True
-                        # #     sqSelected = ()  # reset
-                        # #     playerClicks = []
-                        #     x, move = AI.chooseMove(validMoves, captureMoves, gameState, True)
-                        gameState.makeMove(move)
+                        move = AI.chooseMove(gameState)
+                        print("GoldAI")
+                        if move != "":
+                            gameState.makeMove(move)
+                        drawGameState(screen, gameState, validMoves, captureMoves, sqSelected, requiredTime)
                         moveMade = True
                         sqSelected = ()  # reset
                         playerClicks = []
-                    elif not gameState.goldToMove and not AI.ControlGold and monitor:
-                        monitor = False
-                        print("\n aI2")
-                        #     # AI.evaluationFunction(validMoves,captureMoves)
-                        move = AI.chooseMove(gameState, True)
-                        # x, move = AI2.chooseMove(validMoves, captureMoves, gameState, True)
-                        # move = AI.basicMiniMax(0, validMoves, captureMoves)
-                        gameState.makeMove(move)
-                        moveMade = True
-                        sqSelected = ()  # reset
-                        playerClicks = []
+                    # elif not gameState.goldToMove and not AI2.ControlGold and monitor:
+                    #     monitor = False
+                    #     print("\n Silver AI")
+                    #     #     # AI.evaluationFunction(validMoves,captureMoves)
+                    #     move = AI2.chooseMove(gameState)
+                    #     # x, move = AI2.chooseMove(validMoves, captureMoves, gameState, True)
+                    #     # move = AI.basicMiniMax(0, validMoves, captureMoves)
+                    #     gameState.makeMove(move)
+                    #     drawGameState(screen, gameState, validMoves, captureMoves, sqSelected, requiredTime)
+                    #     moveMade = True
+                    #     sqSelected = ()  # reset
+                    #     playerClicks = []
                     elif e.type == p.MOUSEBUTTONDOWN and monitor:
                         location = p.mouse.get_pos()  # get x,y location of mouse
                         col = (location[0] - LABEL) // SQ_SIZE
@@ -160,12 +144,16 @@ def main():
                 gameState.turnCounter = 1
         else:
             font = p.font.SysFont("calibri",32)
-            text = font.render('Gold player won', True, p.Color("red"), p.Color("black"))
+            text = font.render(gameState.win + " player won", True, p.Color("red"), p.Color("black"))
             textRect = text.get_rect()
-            textRect.center = ((HEIGHT + LABEL) / 2, (HEIGHT + LABEL) / 2)
+            textRect.center = ((WIDTH+LABEL+INFOWIDTH)/2, HEIGHT/2)
+            drawGameState(screen, gameState, validMoves, captureMoves, sqSelected, requiredTime)
             screen.blit(text, textRect)
-            print("done")
+            # print("done")
             p.display.flip()
+            for e in p.event.get():
+                if e.type == p.QUIT:
+                    running = False
     p.quit()
 
 
@@ -249,7 +237,7 @@ def drawPieces(screen, board, letters, numbers):
 
 def drawHistory(screen,turn, history, time):
     # print(history[-9:])
-    font = p.font.SysFont("leelawadeegrassetto", 15)
+    font = p.font.SysFont("rockwellgrassettocorsivo", 15)
     # if len(history)>13 and len(history)!=0:
     #     for i in range(1,13):
     #         text = font.render(history[len(history) - i-1], True, p.Color("black"), p.Color("white"))

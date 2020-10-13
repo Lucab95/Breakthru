@@ -6,7 +6,7 @@ import random
 from tkinter import *
 import gc
 from tkinter import messagebox
-MAXDEPTH = 2
+MAXDEPTH = 1
 
 
 class AI():
@@ -18,17 +18,25 @@ class AI():
         self.player_turn = player_turn
         self.node_expanded = 0
 
-    def evaluationFunction(self, captureMoves, gameState, goldToMove):
+    def evaluationFunction(self, captureMoves, gameState, goldToMove ):
         """Evaluate the state to decide the most convenient move"""
-
-        basiceval = 5 * gameState.goldFleet + 20 * gameState.flagShip - 4 * gameState.silverFleet
-        if not goldToMove:
-            basiceval = basiceval * (-1)
-        #     evalValue = 5 * gameState.goldFleet - 4 * gameState.silverFleet + 20 * gameState.flagShip
-        # else:
-        #     evalValue = 4 * gameState.silverFleet - 5 * gameState.goldFleet - 20 * gameState.flagShip
-
-        return basiceval
+        # basiceval = 5 * gameState.goldFleet + 20 * gameState.flagShip - 4 * gameState.silverFleet + 50*winMoves
+        # if winMoves!=0:
+        #
+        #     # print("win")
+        #     return  10000000
+        # print (gameState.flagShipPosition)
+        # if r ==0 or r ==10 or c==0 or c==10:
+        #     return 10000000
+        #     print("win")
+        last = gameState.moveLog[-1]
+        if last.pieceMoved=="gFS":
+            print("done")
+        if gameState.flagShip == 0:
+            return -10000000
+        evalValue = 5 * gameState.goldFleet - 3 * gameState.silverFleet
+        # print(evalValue)
+        return evalValue
 
     # TODO correggere problema quando non ha mosse
     def basicMiniMax(self, depth, validMoves, captureMoves):
@@ -67,7 +75,7 @@ class AI():
 
         # best_value = float('-inf') if is_max_turn else float('inf')
 
-    def chooseMove(self, gameState, play):
+    def chooseMove(self, gameState):
     # def chooseMove(self, validMoves, captureMoves, gameState, play):
         gc.collect()
         """try to predict a move using minmax algorithm"""
@@ -78,7 +86,7 @@ class AI():
         print("AI is thinking")
         # eval_score, selected_Action = self.miniMax(0, validMoves, captureMoves, gameState, play, True)
         # eval_score, selected_Action = self.miniMax(0, gameState, play, gameState.goldToMove)
-        eval_score, selected_Action = self.miniMaxAlphaBeta(0, gameState, play, gameState.goldToMove, float('-inf'),float('inf'))
+        eval_score, selected_Action = self.miniMaxAlphaBeta(0, gameState, gameState.endGame, gameState.goldToMove, float('-inf'), float('inf'))
         # print("mossaa", validMoves[selected_Action])
         print("MINIMAX : Done, eval = %d, expanded %d" % (eval_score, self.node_expanded))
         timeSpent = time.time() - start_time
@@ -97,20 +105,70 @@ class AI():
         nextGameState.makeMove(move)
         return nextGameState
 
-    def miniMax(self, depth, state, play, goldToMove):  # , validMoves, captureMoves*/, ):
+    # def miniMax(self, depth, state, play, goldToMove):  # , validMoves, captureMoves*/, ):
+    #     gameState = deepcopy(state)
+    #     validMoves, captureMoves = gameState.getValidMoves()
+    #     vMoves = len(validMoves)
+    #     cMoves = len(captureMoves)
+    #     if depth == self.maxDepth or not play:
+    #         return self.evaluationFunction(validMoves, state, gameState.goldToMove), ""
+    #
+    #     self.node_expanded += 1
+    #     # possible_action = AIElements.get_possible_action(state)
+    #     # validMoves and captureMoves in my case
+    #     vMoves = dict(zip(range(vMoves), validMoves))
+    #     cMoves = dict(zip(range(cMoves), captureMoves))  # TODO togliere mosse sovrascr-> cambiare nella funzione che genera le mosse
+    #     possibleMoves = {**vMoves, **cMoves}
+    #     # print(len(cMoves),len(vMoves),len(possibleMoves))
+    #     # possibleCapture = dict(captureMoves[i:i + 2] for i in range(0, len(captureMoves), 2))
+    #     key_of_validMoves = list(possibleMoves.keys())
+    #     random.shuffle(key_of_validMoves)  # randomness
+    #     best_value = float('-inf') if goldToMove else float('inf')
+    #     action_target = ""
+    #     for action in key_of_validMoves:
+    #         new_gameState = self.nextState(possibleMoves[action], gameState)
+    #         # print(new_gameState.goldToMove)
+    #         eval_child, action_child = self.miniMax(depth + 1, new_gameState, play,new_gameState.goldToMove)
+    #         if goldToMove and best_value < eval_child:
+    #             best_value = eval_child
+    #             action_target = action
+    #         elif (not goldToMove) and best_value > eval_child:
+    #             best_value = eval_child
+    #             action_target = action
+    #     # print("ci arriva", action_target)
+    #     # del new_gameState
+    #     return best_value, possibleMoves[action_target]
+    #
+    #     # evalscore,  move = self.minMax(0,)
+    #     # prima funz
+    #
+    #     # best_value = float('-inf') if is_max_turn else float('inf')
+
+    def miniMaxAlphaBeta(self, depth, state, endGame, goldToMove, alpha, beta):
         gameState = deepcopy(state)
+
+
+        # for move in validMoves:
+        #     if move.pieceMoved == "gFS":
+        #         print(move.getNotation())
+        # vMoves = len(validMoves)
+        # cMoves = len(captureMoves)
+        # winMoves = gameState.getSpecificalMoves(gameState.flagShipPosition[0], gameState.flagShipPosition[1])
         validMoves, captureMoves = gameState.getValidMoves()
-        vMoves = len(validMoves)
-        cMoves = len(captureMoves)
-        if depth == self.maxDepth or not play:
-            return self.evaluationFunction(validMoves, state, gameState.goldToMove), ""
+        if depth == self.maxDepth or not endGame:
+            return self.evaluationFunction(validMoves, gameState, gameState.goldToMove), ""
+
 
         self.node_expanded += 1
-        # possible_action = AIElements.get_possible_action(state)
-        # validMoves and captureMoves in my case
-        vMoves = dict(zip(range(vMoves), validMoves))
-        cMoves = dict(zip(range(cMoves), captureMoves))  # TODO togliere mosse sovrascr-> cambiare nella funzione che genera le mosse
-        possibleMoves = {**vMoves, **cMoves}
+        for move in captureMoves:
+            validMoves.append(move)
+        vMoves = len(validMoves)
+        possibleMoves = dict(zip(range(vMoves), validMoves))
+        # print(vMoves)
+        # cMoves = dict(zip(range(cMoves),
+        #                   captureMoves))  # TODO togliere mosse sovrascr-> cambiare nella funzione che genera le mosse
+        # print(len(possibleMoves), len(cMoves))
+        # possibleMoves.update(cMoves)
         # print(len(cMoves),len(vMoves),len(possibleMoves))
         # possibleCapture = dict(captureMoves[i:i + 2] for i in range(0, len(captureMoves), 2))
         key_of_validMoves = list(possibleMoves.keys())
@@ -118,49 +176,17 @@ class AI():
         best_value = float('-inf') if goldToMove else float('inf')
         action_target = ""
         for action in key_of_validMoves:
+            if possibleMoves[action].pieceMoved=="gFS":
+                print("gfsssss")
+                print(possibleMoves[action].pieceCaptured)#fixme
+        # for i,k in enumerate(validMoves):
+            # print(i,k)
             new_gameState = self.nextState(possibleMoves[action], gameState)
             # print(new_gameState.goldToMove)
-            eval_child, action_child = self.miniMax(depth + 1, new_gameState, play,new_gameState.goldToMove)
-            if goldToMove and best_value < eval_child:
-                best_value = eval_child
-                action_target = action
-            elif (not goldToMove) and best_value > eval_child:
-                best_value = eval_child
-                action_target = action
-        # print("ci arriva", action_target)
-        # del new_gameState
-        return best_value, possibleMoves[action_target]
-
-        # evalscore,  move = self.minMax(0,)
-        # prima funz
-
-        # best_value = float('-inf') if is_max_turn else float('inf')
-
-    def miniMaxAlphaBeta(self, depth, state, play, goldToMove, alpha, beta):
-        gameState = deepcopy(state)
-        validMoves, captureMoves = gameState.getValidMoves()
-        vMoves = len(validMoves)
-        cMoves = len(captureMoves)
-        if depth == self.maxDepth or not play:
-            return self.evaluationFunction(validMoves, state, gameState.goldToMove), ""
-
-        self.node_expanded += 1
-        # possible_action = AIElements.get_possible_action(state)
-        # validMoves and captureMoves in my case
-        vMoves = dict(zip(range(vMoves), validMoves))
-        cMoves = dict(zip(range(cMoves),
-                          captureMoves))  # TODO togliere mosse sovrascr-> cambiare nella funzione che genera le mosse
-        possibleMoves = {**vMoves, **cMoves}
-        # print(len(cMoves),len(vMoves),len(possibleMoves))
-        # possibleCapture = dict(captureMoves[i:i + 2] for i in range(0, len(captureMoves), 2))
-        key_of_validMoves = list(possibleMoves.keys())
-        random.shuffle(key_of_validMoves)  # randomness
-        best_value = float('-inf') if goldToMove else float('inf')
-        action_target = ""
-        for action in key_of_validMoves:
-            new_gameState = self.nextState(possibleMoves[action], gameState)
-            # print(new_gameState.goldToMove)
-            eval_child, action_child = self.miniMaxAlphaBeta(depth + 1, new_gameState, play, new_gameState.goldToMove, alpha, beta)
+            # print(depth, goldToMove)
+            eval_child, action_child = self.miniMaxAlphaBeta(depth + 1, new_gameState, endGame, new_gameState.goldToMove, alpha, beta)
+            if eval_child>10000:
+                gameState.endGame = False
             if goldToMove and best_value < eval_child:
                 best_value = eval_child
                 action_target = action
@@ -176,3 +202,45 @@ class AI():
         # print("ci arriva", action_target)
         # del new_gameState
         return best_value, possibleMoves[action_target]
+
+    # def negaMaxAlphaBeta(self, depth, state, play, goldToMove, alpha, beta):
+    #     gameState = deepcopy(state)
+    #     validMoves, captureMoves = gameState.getValidMoves()
+    #     vMoves = len(validMoves)
+    #     cMoves = len(captureMoves)
+    #     if depth == self.maxDepth or not play:
+    #         return self.evaluationFunction(validMoves, state, gameState.goldToMove), ""
+    #
+    #     self.node_expanded += 1
+    #     # possible_action = AIElements.get_possible_action(state)
+    #     # validMoves and captureMoves in my case
+    #     vMoves = dict(zip(range(vMoves), validMoves))
+    #     cMoves = dict(zip(range(cMoves),
+    #                       captureMoves))  # TODO togliere mosse sovrascr-> cambiare nella funzione che genera le mosse
+    #     possibleMoves = {**vMoves, **cMoves}
+    #     # print(len(cMoves),len(vMoves),len(possibleMoves))
+    #     # possibleCapture = dict(captureMoves[i:i + 2] for i in range(0, len(captureMoves), 2))
+    #     key_of_validMoves = list(possibleMoves.keys())
+    #     random.shuffle(key_of_validMoves)  # randomness
+    #     best_value = float('-inf') if goldToMove else float('inf')
+    #     action_target = ""
+    #     for action in key_of_validMoves:
+    #         new_gameState = self.nextState(possibleMoves[action], gameState)
+    #         # print(new_gameState.goldToMove)
+    #         eval_child, action_child = self.miniMaxAlphaBeta(depth + 1, new_gameState, play,
+    #                                                          new_gameState.goldToMove, alpha, beta)
+    #         if goldToMove and best_value < eval_child:
+    #             best_value = eval_child
+    #             action_target = action
+    #             alpha = max(alpha, best_value)
+    #             if beta <= alpha:
+    #                 break
+    #         elif (not goldToMove) and best_value > eval_child:
+    #             best_value = eval_child
+    #             action_target = action
+    #             beta = min(beta, best_value)
+    #             if beta <= alpha:
+    #                 break
+    #     # print("ci arriva", action_target)
+    #     # del new_gameState
+    #     return best_value, possibleMoves[action_target]
