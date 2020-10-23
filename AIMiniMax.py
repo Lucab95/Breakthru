@@ -6,7 +6,8 @@ import random
 from tkinter import *
 import gc
 from tkinter import messagebox
-MAXDEPTH = 1
+
+MAXDEPTH = 3
 
 
 class AI():
@@ -18,7 +19,7 @@ class AI():
         self.player_turn = player_turn
         self.node_expanded = 0
 
-    def evaluationFunction(self, captureMoves, gameState, goldToMove ):
+    def evaluationFunction(self, gameState, goldToMove):
         """Evaluate the state to decide the most convenient move"""
         # basiceval = 5 * gameState.goldFleet + 20 * gameState.flagShip - 4 * gameState.silverFleet + 50*winMoves
         # if winMoves!=0:
@@ -29,12 +30,23 @@ class AI():
         # if r ==0 or r ==10 or c==0 or c==10:
         #     return 10000000
         #     print("win")
-        last = gameState.moveLog[-1]
-        if last.pieceMoved=="gFS":
-            print("done")
+        # last = gameState.moveLog[-1]
+        # print(last.pieceMoved)
+        win = 0
+        fR, fC = gameState.flagShipPosition
+        # if last.pieceMoved == "gFS":
+        #     print("gfs", last.endRow, last.endCol)
+        #     if last.endRow == 0 or last.endRow ==10 or last.endCol==0 or last.endCol ==10:
+        #         print("win")
+        #         # gameState.stillPlay=False;
+        #         win= 10000000
         if gameState.flagShip == 0:
-            return -10000000
-        evalValue = 5 * gameState.goldFleet - 3 * gameState.silverFleet
+            win = -10000000
+        elif fR == 0 or fR == 10 or fC == 0 or fC == 10:
+            print("win")
+            # gameState.stillPlay=False;
+            win = 10000000
+        evalValue = 5 * gameState.goldFleet - 3 * gameState.silverFleet + win
         # print(evalValue)
         return evalValue
 
@@ -75,8 +87,8 @@ class AI():
 
         # best_value = float('-inf') if is_max_turn else float('inf')
 
-    def chooseMove(self, gameState):
-    # def chooseMove(self, validMoves, captureMoves, gameState, play):
+    def chooseMove(self, state):
+        # def chooseMove(self, validMoves, captureMoves, gameState, play):
         gc.collect()
         """try to predict a move using minmax algorithm"""
         self.node_expanded = 0
@@ -86,20 +98,26 @@ class AI():
         print("AI is thinking")
         # eval_score, selected_Action = self.miniMax(0, validMoves, captureMoves, gameState, play, True)
         # eval_score, selected_Action = self.miniMax(0, gameState, play, gameState.goldToMove)
-        eval_score, selected_Action = self.miniMaxAlphaBeta(0, gameState, gameState.endGame, gameState.goldToMove, float('-inf'), float('inf'))
+
+        gameState = deepcopy(state)
+        print("end? :", gameState.stillPlay)
+        eval_score, selectedMove = self.miniMaxAlphaBeta(0, gameState, gameState.stillPlay, gameState.goldToMove,
+                                                         float('-inf'), float('inf'))
         # print("mossaa", validMoves[selected_Action])
         print("MINIMAX : Done, eval = %d, expanded %d" % (eval_score, self.node_expanded))
         timeSpent = time.time() - start_time
         self.timeRequired += timeSpent
         self.timeRequired = round(self.timeRequired, 3)
         print("--- %s seconds ---" % (timeSpent))
-        return (selected_Action)
+        return (selectedMove)
 
     def nextState(self, move, gameState):
         """return the new state after executing the move"""
         # window = Tk()
         # window.eval("tk::PlaceWindow %s center" % window.winfo_toplevel())
         # window.withdraw()
+        # if move.pieceMoved == "gFS":
+        #     print(move.pieceMoved)
         nextGameState = deepcopy(gameState)
         nextGameState.DEBUG = False
         nextGameState.makeMove(move)
@@ -144,22 +162,21 @@ class AI():
     #
     #     # best_value = float('-inf') if is_max_turn else float('inf')
 
-    def miniMaxAlphaBeta(self, depth, state, endGame, goldToMove, alpha, beta):
-        gameState = deepcopy(state)
-
-
+    def miniMaxAlphaBeta(self, depth, state, stillPlay, goldToMove, alpha, beta):
+        gameState = state
         # for move in validMoves:
         #     if move.pieceMoved == "gFS":
         #         print(move.getNotation())
         # vMoves = len(validMoves)
         # cMoves = len(captureMoves)
         # winMoves = gameState.getSpecificalMoves(gameState.flagShipPosition[0], gameState.flagShipPosition[1])
-        validMoves, captureMoves = gameState.getValidMoves()
-        if depth == self.maxDepth or not endGame:
-            return self.evaluationFunction(validMoves, gameState, gameState.goldToMove), ""
-
+        # if not stillPlay:
 
         self.node_expanded += 1
+        # print("gioca ancora in aI:",stillPlay)
+        if depth == self.maxDepth or not stillPlay:
+            return self.evaluationFunction(gameState, gameState.goldToMove), ""
+        validMoves, captureMoves = gameState.getValidMoves()
         for move in captureMoves:
             validMoves.append(move)
         vMoves = len(validMoves)
@@ -176,17 +193,17 @@ class AI():
         best_value = float('-inf') if goldToMove else float('inf')
         action_target = ""
         for action in key_of_validMoves:
-            if possibleMoves[action].pieceMoved=="gFS":
-                print("gfsssss")
-                print(possibleMoves[action].pieceCaptured)#fixme
-        # for i,k in enumerate(validMoves):
+            # for i,k in enumerate(validMoves):
             # print(i,k)
             new_gameState = self.nextState(possibleMoves[action], gameState)
             # print(new_gameState.goldToMove)
             # print(depth, goldToMove)
-            eval_child, action_child = self.miniMaxAlphaBeta(depth + 1, new_gameState, endGame, new_gameState.goldToMove, alpha, beta)
-            if eval_child>10000:
-                gameState.endGame = False
+            eval_child, action_child = self.miniMaxAlphaBeta(depth + 1, new_gameState, new_gameState.stillPlay,
+                                                             new_gameState.goldToMove, alpha, beta)
+            if eval_child > 10000:
+                gameState.stillPlay = False
+            if eval_child < -10000:
+                gameState.stillPlay = False
             if goldToMove and best_value < eval_child:
                 best_value = eval_child
                 action_target = action

@@ -65,7 +65,7 @@ def main():
     while running:
         requiredTime = AI.timeRequired
         drawGameState(screen, gameState, validMoves, captureMoves, sqSelected, requiredTime)
-        if gameState.endGame:
+        if gameState.stillPlay:
             if gameState.turnCounter != 0:
                 for e in p.event.get():
                     if e.type == p.QUIT:
@@ -97,7 +97,7 @@ def main():
                         location = p.mouse.get_pos()  # get x,y location of mouse
                         col = (location[0] - LABEL) // SQ_SIZE
                         row = (location[1] - LABEL) // SQ_SIZE
-                        if col > 10:
+                        if col > 10 or row > 10:
                             sqSelected = ()
                             playerClicks = []
                             break
@@ -143,10 +143,10 @@ def main():
                 # p.time.wait(1500)
                 gameState.turnCounter = 1
         else:
-            font = p.font.SysFont("calibri",32)
+            font = p.font.SysFont("calibri", 32)
             text = font.render(gameState.win + " player won", True, p.Color("red"), p.Color("black"))
             textRect = text.get_rect()
-            textRect.center = ((WIDTH+LABEL+INFOWIDTH)/2, HEIGHT/2)
+            textRect.center = ((WIDTH + LABEL + INFOWIDTH) / 2, HEIGHT / 2)
             drawGameState(screen, gameState, validMoves, captureMoves, sqSelected, requiredTime)
             screen.blit(text, textRect)
             # print("done")
@@ -182,7 +182,7 @@ def highlightSquares(screen, gameState, moves, sqSelected, color):
 def drawGameState(screen, gameState, validMoves, captureMoves, sqSelected, time):
     drawBoard(screen)  # draw squares on the board
     drawPieces(screen, gameState.board, gameState.letters, gameState.numbers)  # draw pieces on top of squares
-    drawHistory(screen,gameState.goldToMove, gameState.history, time)
+    drawHistory(screen, gameState.goldToMove, gameState.history, time)
     highlightSquares(screen, gameState, validMoves, sqSelected, p.Color("yellow"))
     highlightSquares(screen, gameState, captureMoves, sqSelected, p.Color("red"))
 
@@ -204,17 +204,16 @@ def drawBoard(screen):
         for c in range(DIMENSION):
             # color = colors[((r + c) % 2)]
             p.draw.rect(screen, color, p.Rect((c * SQ_SIZE) + LABEL, (r * SQ_SIZE) + LABEL, SQ_SIZE, SQ_SIZE), 2)
-    p.draw.rect(screen, color,p.Rect((WIDTH + LABEL+50, SQ_SIZE + LABEL, 300, 512-SQ_SIZE*2)))
+    p.draw.rect(screen, color, p.Rect((WIDTH + LABEL + 50, SQ_SIZE + LABEL, 300, 512 - SQ_SIZE * 2)))
 
 
 """draw pieces on the board"""
 
 
 def drawPieces(screen, board, letters, numbers):
-
     """draw letters"""
     # print(p.font.get_fonts())
-    font = p.font.SysFont("rockwellgrassettocorsivo",28)
+    font = p.font.SysFont("rockwellgrassettocorsivo", 28)
     half = SQ_SIZE / 2
     for r in range(1, DIMENSION + 1):
         text = font.render(letters[r - 1], True, p.Color("blue"), p.Color("black"))
@@ -235,7 +234,8 @@ def drawPieces(screen, board, letters, numbers):
             if piece != "-":
                 screen.blit(IMAGES[piece], p.Rect(c * SQ_SIZE + LABEL, r * SQ_SIZE + LABEL, SQ_SIZE, SQ_SIZE))
 
-def drawHistory(screen,turn, history, time):
+
+def drawHistory(screen, turn, history, time):
     # print(history[-9:])
     font = p.font.SysFont("rockwellgrassettocorsivo", 15)
     # if len(history)>13 and len(history)!=0:
@@ -247,21 +247,23 @@ def drawHistory(screen,turn, history, time):
     turn = 'Gold' if turn else 'Silver'
     text = font.render("TURN: " + str(turn), True, p.Color("blue"))
     textRect = text.get_rect()
-    textRect.center = (WIDTH + LABEL + 50, SQ_SIZE/2*3)
+    textRect.center = (WIDTH + LABEL + 50, SQ_SIZE / 2 * 3)
     screen.blit(text, textRect)
 
     text = font.render("AI time spent: " + str(time), True, p.Color("blue"))
     textRect = text.get_rect()
-    textRect.center = (WIDTH + LABEL*3 + INFOWIDTH/2, SQ_SIZE / 2 * 3)
+    textRect.center = (WIDTH + LABEL * 3 + INFOWIDTH / 2, SQ_SIZE / 2 * 3)
     screen.blit(text, textRect)
 
-    if len(history)!=0:
-        for i in range (len(history)):
-            text = font.render(history[len(history) - i-1], True, p.Color("black"), p.Color("white"))
+    if len(history) != 0:
+        for i in range(len(history)):
+            text = font.render(history[len(history) - i - 1], True, p.Color("black"), p.Color("white"))
             textRect = text.get_rect()
-            textRect.center = (WIDTH + LABEL + INFOWIDTH/2, 512 - (i+1) * 30)
+            textRect.center = (WIDTH + LABEL + INFOWIDTH / 2, 512 - (i + 1) * 30)
             screen.blit(text, textRect)
-            if i>11:
+            if i > 11:
                 break
+
+
 if __name__ == "__main__":
     main()

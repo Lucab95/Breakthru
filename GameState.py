@@ -13,19 +13,33 @@ class GameState:
         # "-" is used for empty spaces
         # sP stands for silver pawn and gP for gold pawn
         # gFS stands for gold flagship
+        # self.board = np.array([
+        #     ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+        #     ["-", "-", "-", "sP", "sP", "sP", "sP", "sP", "-", "-", "-"],
+        #     ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+        #     ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+        #     ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+        #     ["-", "-", "-", "-", "-", "gFS", "-", "-", "-", "-", "-"],
+        #     ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+        #     ["-", "-", "-", "-", "-", "-", "-", "gP", "gP", "-", "-"],
+        #     ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+        #     ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+        #     ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+        #     ]
+        # )
         self.board = np.array([
             ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
             ["-", "-", "-", "sP", "sP", "sP", "sP", "sP", "-", "-", "-"],
             ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
             ["-", "sP", "-", "-", "gP", "gP", "gP", "-", "-", "sP", "-"],
             ["-", "sP", "-", "gP", "-", "-", "-", "gP", "-", "sP", "-"],
-            ["-", "sP", "-", "gP", "-", "gFS", "-", "-", "-", "sP", "-"],
-            ["-", "sP", "-", "-", "-", "-", "-", "-", "-", "sP", "-"],
-            ["-", "sP", "-", "-", "-", "-", "-", "-", "-", "sP", "-"],
+            ["-", "sP", "-", "gP", "-", "gFS", "-", "gP", "-", "sP", "-"],
+            ["-", "sP", "-", "gP", "-", "-", "-", "gP", "-", "sP", "-"],
+            ["-", "sP", "-", "-", "gP", "-", "gP", "-", "-", "sP", "-"],
             ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
-            ["-", "-", "-", "sP", "sP", "-", "sP", "sP", "-", "-", "-"],
+            ["-", "-", "-", "sP", "sP", "sP", "sP", "sP", "-", "-", "-"],
             ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
-        ]
+            ]
         )
         self.letters = (["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"])
         self.numbers = (["11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1"])
@@ -41,7 +55,7 @@ class GameState:
         self.history = []
         self.flagShipPosition = (5,5)
         # TODO decide the state using a function and check evaluation not in move
-        self.endGame = True  # used to define the gameState True -> game False-> end game
+        self.stillPlay = True  # used to define the gameState True -> game False-> end game
         self.win = "Gold"
         self.DEBUG = True
 
@@ -50,6 +64,15 @@ class GameState:
     def makeMove(self, move):
         self.board[move.startRow][move.startCol] = "-"
         turn = 'Gold' if self.goldToMove else 'Silver'
+        eR=move.endRow
+        eC=move.endCol
+        if move.pieceMoved == 'gFS':
+            self.flagShipPosition = (eR, eC)
+            if (eR == 0 or eR == 10) or (eC == 10 or eC == 0) :
+                self.win = "Flag escaped, Gold"
+                print("escaped")
+                self.stillPlay = False
+                print("Gold escaped")
         if self.DEBUG:
             if move.pieceCaptured == "-":
                 print(move.pieceMoved, move.getNotation() + "  " + str(self.secondMove), self.goldToMove)
@@ -57,7 +80,8 @@ class GameState:
                 if move.pieceMoved == 'gFS':
                     if (move.endCol == 10 or move.endCol == 0) or (move.endRow == 0 or move.endRow == 10):
                         self.win = "Flag escaped, Gold"
-                        self.endGame = False
+                        print("escaped")
+                        self.stillPlay = False
                         print("Gold escaped")
             else:
                 print(move.pieceMoved, move.getNotation() + "  " + str(self.secondMove), self.goldToMove, "captured",
@@ -66,13 +90,12 @@ class GameState:
                 #     self.secondMove) +" " + turn + "turn" + "captured" + move.pieceCaptured)
                 self.history.append(
                     turn + " captured " + move.pieceCaptured + " move: " + move.pieceMoved + " " + move.getNotation())
-
         self.moveCost(move)
         if self.silverFleet == 0:
-            self.endGame = False;
+            self.stillPlay = False;
             self.win = "Gold"
         if self.flagShip == 0:
-            self.endGame = False
+            self.stillPlay = False
             self.win = "Flag captured, Silver"
         # TODO WINNING CONDITIONS should be defined inside evaluation function
         #     if self.DEBUG:
