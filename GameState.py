@@ -2,7 +2,6 @@
 import random
 
 from tkinter import messagebox
-import numpy as np
 import pygame
 
 DEBUG = True
@@ -27,7 +26,7 @@ class GameState:
         #     ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
         #     ]
         # )
-        self.board = np.array([
+        self.board = ([
             ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
             ["-", "-", "-", "sP", "sP", "sP", "sP", "sP", "-", "-", "-"],
             ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
@@ -35,7 +34,7 @@ class GameState:
             ["-", "sP", "-", "gP", "-", "-", "-", "gP", "-", "sP", "-"],
             ["-", "sP", "-", "gP", "-", "gFS", "-", "gP", "-", "sP", "-"],
             ["-", "sP", "-", "gP", "-", "-", "-", "gP", "-", "sP", "-"],
-            ["-", "sP", "-", "-", "gP", "-", "gP", "-", "-", "sP", "-"],
+            ["-", "sP", "-", "-", "gP", "gP", "gP", "-", "-", "sP", "-"],
             ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
             ["-", "-", "-", "sP", "sP", "sP", "sP", "sP", "-", "-", "-"],
             ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
@@ -191,7 +190,7 @@ class GameState:
         # else:
         # TODO add turn as parameter if i want to calculate specifical moves for a plaayer
         for r in range(len(self.board)):  # number of rows
-            for c in range(len(self.board[r])):  # number of columns
+            for c in range(len(self.board[0])):  # number of columns
                 turn = self.board[r][c][0]
                 if (turn == 'g' and self.goldToMove) or (turn == 's' and not self.goldToMove):
                     piece = self.board[r][c][1]

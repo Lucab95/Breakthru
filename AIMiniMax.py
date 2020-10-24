@@ -1,6 +1,6 @@
 import time
 from copy import deepcopy
-
+import numpy as np
 import GameState
 import random
 from tkinter import *
@@ -18,6 +18,7 @@ class AI():
         self.maxDepth = MAXDEPTH
         self.player_turn = player_turn
         self.node_expanded = 0
+        self.table = [[[random.randint(1,2**64 - 1) for i in range(33)]for j in range(11)]for k in range(11)]
 
     def evaluationFunction(self, gameState, goldToMove):
         """Evaluate the state to decide the most convenient move"""
@@ -94,15 +95,18 @@ class AI():
         self.node_expanded = 0
 
         start_time = time.time()
+        hashValue = self.calculateHash(state.board)
+        print(hashValue)
 
         print("AI is thinking")
         # eval_score, selected_Action = self.miniMax(0, validMoves, captureMoves, gameState, play, True)
         # eval_score, selected_Action = self.miniMax(0, gameState, play, gameState.goldToMove)
-
         gameState = deepcopy(state)
-        print("end? :", gameState.stillPlay)
+        # print("end? :", gameState.stillPlay)
+
         eval_score, selectedMove = self.miniMaxAlphaBeta(0, gameState, gameState.stillPlay, gameState.goldToMove,
                                                          float('-inf'), float('inf'))
+        # print(selectedMove)
         # print("mossaa", validMoves[selected_Action])
         print("MINIMAX : Done, eval = %d, expanded %d" % (eval_score, self.node_expanded))
         timeSpent = time.time() - start_time
@@ -162,8 +166,8 @@ class AI():
     #
     #     # best_value = float('-inf') if is_max_turn else float('inf')
 
-    def miniMaxAlphaBeta(self, depth, state, stillPlay, goldToMove, alpha, beta):
-        gameState = state
+    def miniMaxAlphaBeta(self, depth, gameState, stillPlay, goldToMove, alpha, beta):
+        # gameState = state
         # for move in validMoves:
         #     if move.pieceMoved == "gFS":
         #         print(move.getNotation())
@@ -179,8 +183,9 @@ class AI():
         validMoves, captureMoves = gameState.getValidMoves()
         for move in captureMoves:
             validMoves.append(move)
+        random.shuffle(validMoves)
         vMoves = len(validMoves)
-        possibleMoves = dict(zip(range(vMoves), validMoves))
+        # possibleMoves = dict(zip(range(vMoves), validMoves))
         # print(vMoves)
         # cMoves = dict(zip(range(cMoves),
         #                   captureMoves))  # TODO togliere mosse sovrascr-> cambiare nella funzione che genera le mosse
@@ -188,14 +193,14 @@ class AI():
         # possibleMoves.update(cMoves)
         # print(len(cMoves),len(vMoves),len(possibleMoves))
         # possibleCapture = dict(captureMoves[i:i + 2] for i in range(0, len(captureMoves), 2))
-        key_of_validMoves = list(possibleMoves.keys())
-        random.shuffle(key_of_validMoves)  # randomness
+        # key_of_validMoves = list(possibleMoves.keys())
+        # random.shuffle(key_of_validMoves)  # randomness
         best_value = float('-inf') if goldToMove else float('inf')
         action_target = ""
-        for action in key_of_validMoves:
+        for action in validMoves:
             # for i,k in enumerate(validMoves):
             # print(i,k)
-            new_gameState = self.nextState(possibleMoves[action], gameState)
+            new_gameState = self.nextState(action, gameState)
             # print(new_gameState.goldToMove)
             # print(depth, goldToMove)
             eval_child, action_child = self.miniMaxAlphaBeta(depth + 1, new_gameState, new_gameState.stillPlay,
@@ -218,46 +223,106 @@ class AI():
                     break
         # print("ci arriva", action_target)
         # del new_gameState
-        return best_value, possibleMoves[action_target]
+        return best_value, action_target
 
-    # def negaMaxAlphaBeta(self, depth, state, play, goldToMove, alpha, beta):
-    #     gameState = deepcopy(state)
-    #     validMoves, captureMoves = gameState.getValidMoves()
-    #     vMoves = len(validMoves)
-    #     cMoves = len(captureMoves)
-    #     if depth == self.maxDepth or not play:
-    #         return self.evaluationFunction(validMoves, state, gameState.goldToMove), ""
-    #
+
+    def miniMaxABIDD(self, depth, gameState, stillPlay, goldToMove, alpha, beta):
+        self.node_expanded += 1
+        # print("gioca ancora in aI:",stillPlay)
+        if depth == self.maxDepth or not stillPlay:
+            return self.evaluationFunction(gameState, gameState.goldToMove), ""
+        validMoves, captureMoves = gameState.getValidMoves()
+        for move in captureMoves:
+            validMoves.append(move)
+        random.shuffle(validMoves)
+        vMoves = len(validMoves)
+        best_value = float('-inf') if goldToMove else float('inf')
+        action_target = ""
+        for action in validMoves:
+            new_gameState = self.nextState(action, gameState)
+            eval_child, action_child = self.miniMaxAlphaBeta(depth + 1, new_gameState, new_gameState.stillPlay,
+                                                             new_gameState.goldToMove, alpha, beta)
+            if eval_child > 10000:
+                gameState.stillPlay = False
+            if eval_child < -10000:
+                gameState.stillPlay = False
+            if goldToMove and best_value < eval_child:
+                best_value = eval_child
+                action_target = action
+                alpha = max(alpha, best_value)
+                if beta <= alpha:
+                    break
+            elif (not goldToMove) and best_value > eval_child:
+                best_value = eval_child
+                action_target = action
+                beta = min(beta, best_value)
+                if beta <= alpha:
+                    break
+        return best_value, action_target
+
+    # def zobristHashing(self, board):
+    #     calculateHash(gameState.board)
+
+
+    def calculateHash(self,board):
+        """calculates the Zobrist hash for the current board"""
+        hash = 0
+        for r in range(len(board)):  # number of rows
+            for c in range(len(board[0])):  # number of columns
+                piece = board[r][c]
+                if piece!="-":
+                    hash ^= self.table[r][c][self.calculateIndex(piece)]
+        return hash
+
+
+    def calculateIndex(self,piece):
+        """calculate the index for every piece-> empty = -1, silver = 0, gold=1, flagShip = 2"""
+        if piece =="-":
+            return -1
+        elif piece =="sP":
+            return 0
+        elif piece =="gP":
+            return 1
+        else:
+            return 2
+    # def negaMaxAlphaBeta(self, depth, gameState, stillPlay, goldToMove, alpha, beta):
     #     self.node_expanded += 1
-    #     # possible_action = AIElements.get_possible_action(state)
-    #     # validMoves and captureMoves in my case
-    #     vMoves = dict(zip(range(vMoves), validMoves))
-    #     cMoves = dict(zip(range(cMoves),
-    #                       captureMoves))  # TODO togliere mosse sovrascr-> cambiare nella funzione che genera le mosse
-    #     possibleMoves = {**vMoves, **cMoves}
-    #     # print(len(cMoves),len(vMoves),len(possibleMoves))
-    #     # possibleCapture = dict(captureMoves[i:i + 2] for i in range(0, len(captureMoves), 2))
-    #     key_of_validMoves = list(possibleMoves.keys())
-    #     random.shuffle(key_of_validMoves)  # randomness
-    #     best_value = float('-inf') if goldToMove else float('inf')
+    #     # print("gioca ancora in aI:",stillPlay)
+    #     if depth == self.maxDepth or not stillPlay:
+    #         return self.evaluationFunction(gameState, gameState.goldToMove), ""
+    #     validMoves, captureMoves = gameState.getValidMoves()
+    #     for move in captureMoves:
+    #         validMoves.append(move)
+    #     vMoves = len(validMoves)
+    #     # possibleMoves = dict(zip(range(vMoves), validMoves))
+    #     # key_of_validMoves = list(possibleMoves.keys())
+    #     score = float('-inf')
     #     action_target = ""
-    #     for action in key_of_validMoves:
-    #         new_gameState = self.nextState(possibleMoves[action], gameState)
+    #     for action in validMoves:
+    #         previousMove=gameState.goldToMove
+    #         new_gameState = self.nextState(action, gameState)
     #         # print(new_gameState.goldToMove)
-    #         eval_child, action_child = self.miniMaxAlphaBeta(depth + 1, new_gameState, play,
-    #                                                          new_gameState.goldToMove, alpha, beta)
-    #         if goldToMove and best_value < eval_child:
-    #             best_value = eval_child
+    #         # print("turn", action.pieceMoved, previousMove, new_gameState.goldToMove)
+    #         if previousMove != new_gameState.goldToMove:
+    #
+    #             value, child = self.negaMaxAlphaBeta(depth + 1, new_gameState, new_gameState.stillPlay,
+    #                                                         new_gameState.goldToMove, -beta, -alpha)
+    #             value = value * -1
+    #         else:
+    #             value, child = self.negaMaxAlphaBeta(depth + 1, new_gameState, new_gameState.stillPlay,
+    #                                                         new_gameState.goldToMove, alpha, beta)
+    #             value = value * -1
+    #         if value > 10000:
+    #             gameState.stillPlay = False
+    #         if value < -10000:
+    #             gameState.stillPlay = False
+    #         if value > score:
+    #             score = value
     #             action_target = action
-    #             alpha = max(alpha, best_value)
-    #             if beta <= alpha:
-    #                 break
-    #         elif (not goldToMove) and best_value > eval_child:
-    #             best_value = eval_child
-    #             action_target = action
-    #             beta = min(beta, best_value)
-    #             if beta <= alpha:
-    #                 break
+    #         if score > alpha: alpha = score
+    #         if score >= beta: break
+    #
     #     # print("ci arriva", action_target)
     #     # del new_gameState
-    #     return best_value, possibleMoves[action_target]
+    #     # print(action_target,action_child)
+    #     return score, action_target
