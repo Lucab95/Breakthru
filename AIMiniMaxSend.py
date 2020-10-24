@@ -3,9 +3,6 @@ from copy import deepcopy
 import numpy as np
 import GameState
 import random
-from tkinter import *
-import gc
-from tkinter import messagebox
 
 MAXDEPTH = 3
 
@@ -17,9 +14,9 @@ class AI():
         self.ControlGold = True
         self.maxDepth = MAXDEPTH
         self.player_turn = player_turn
-        self.node_expanded = 0
-        self.table = [[[random.randint(1,2**64 - 1) for i in range(33)]for j in range(11)]for k in range(11)]
-
+        self.visitedNode = 0
+        self.table = [[[random.randint(1, 2 ** 64 - 1) for i in range(3)] for j in range(11)] for k in range(11)]#initialize a table with random values for the 3 different pieces
+        self.TT = dict({})
     def evaluationFunction(self, gameState, goldToMove):
         """Evaluate the state to decide the most convenient move"""
         # basiceval = 5 * gameState.goldFleet + 20 * gameState.flagShip - 4 * gameState.silverFleet + 50*winMoves
@@ -90,13 +87,12 @@ class AI():
 
     def chooseMove(self, state):
         # def chooseMove(self, validMoves, captureMoves, gameState, play):
-        gc.collect()
         """try to predict a move using minmax algorithm"""
-        self.node_expanded = 0
+        self.visitedNode = 0
 
         start_time = time.time()
-        hashValue = self.calculateHash(state.board)
-        print(hashValue)
+        # hashValue = self.calculateHash(state.board)
+        # print(hashValue)
 
         print("AI is thinking")
         # eval_score, selected_Action = self.miniMax(0, validMoves, captureMoves, gameState, play, True)
@@ -108,7 +104,7 @@ class AI():
                                                          float('-inf'), float('inf'))
         # print(selectedMove)
         # print("mossaa", validMoves[selected_Action])
-        print("MINIMAX : Done, eval = %d, expanded %d" % (eval_score, self.node_expanded))
+        print("MINIMAX : Done, eval = %d, expanded %d" % (eval_score, self.visitedNode))
         timeSpent = time.time() - start_time
         self.timeRequired += timeSpent
         self.timeRequired = round(self.timeRequired, 3)
@@ -135,7 +131,7 @@ class AI():
     #     if depth == self.maxDepth or not play:
     #         return self.evaluationFunction(validMoves, state, gameState.goldToMove), ""
     #
-    #     self.node_expanded += 1
+    #     self.visitedNode += 1
     #     # possible_action = AIElements.get_possible_action(state)
     #     # validMoves and captureMoves in my case
     #     vMoves = dict(zip(range(vMoves), validMoves))
@@ -175,8 +171,12 @@ class AI():
         # cMoves = len(captureMoves)
         # winMoves = gameState.getSpecificalMoves(gameState.flagShipPosition[0], gameState.flagShipPosition[1])
         # if not stillPlay:
+        # hash = self.calculateHash(gameState.board)
+        # self.TT.setdefault(hash,[depth,alpha,beta])
+        # print("value",self.TT.get(2))
+        # print(list(self.TT))
 
-        self.node_expanded += 1
+        self.visitedNode += 1
         # print("gioca ancora in aI:",stillPlay)
         if depth == self.maxDepth or not stillPlay:
             return self.evaluationFunction(gameState, gameState.goldToMove), ""
@@ -225,68 +225,70 @@ class AI():
         # del new_gameState
         return best_value, action_target
 
-
-    def miniMaxABIDD(self, depth, gameState, stillPlay, goldToMove, alpha, beta):
-        self.node_expanded += 1
-        # print("gioca ancora in aI:",stillPlay)
-        if depth == self.maxDepth or not stillPlay:
-            return self.evaluationFunction(gameState, gameState.goldToMove), ""
-        validMoves, captureMoves = gameState.getValidMoves()
-        for move in captureMoves:
-            validMoves.append(move)
-        random.shuffle(validMoves)
-        vMoves = len(validMoves)
-        best_value = float('-inf') if goldToMove else float('inf')
-        action_target = ""
-        for action in validMoves:
-            new_gameState = self.nextState(action, gameState)
-            eval_child, action_child = self.miniMaxAlphaBeta(depth + 1, new_gameState, new_gameState.stillPlay,
-                                                             new_gameState.goldToMove, alpha, beta)
-            if eval_child > 10000:
-                gameState.stillPlay = False
-            if eval_child < -10000:
-                gameState.stillPlay = False
-            if goldToMove and best_value < eval_child:
-                best_value = eval_child
-                action_target = action
-                alpha = max(alpha, best_value)
-                if beta <= alpha:
-                    break
-            elif (not goldToMove) and best_value > eval_child:
-                best_value = eval_child
-                action_target = action
-                beta = min(beta, best_value)
-                if beta <= alpha:
-                    break
-        return best_value, action_target
+    # def miniMaxABIDD(self, depth, gameState, stillPlay, goldToMove, alpha, beta):
+    #     self.visitedNode += 1
+    #     # print("gioca ancora in aI:",stillPlay)
+    #     if depth == self.maxDepth or not stillPlay:
+    #         return self.evaluationFunction(gameState, gameState.goldToMove), ""
+    #     validMoves, captureMoves = gameState.getValidMoves()
+    #     for move in captureMoves:
+    #         validMoves.append(move)
+    #     random.shuffle(validMoves)
+    #     vMoves = len(validMoves)
+    #     best_value = float('-inf') if goldToMove else float('inf')
+    #     action_target = ""
+    #     for action in validMoves:
+    #         new_gameState = self.nextState(action, gameState)
+    #         eval_child, action_child = self.miniMaxAlphaBeta(depth + 1, new_gameState, new_gameState.stillPlay,
+    #                                                          new_gameState.goldToMove, alpha, beta)
+    #         if eval_child > 10000:
+    #             gameState.stillPlay = False
+    #         if eval_child < -10000:
+    #             gameState.stillPlay = False
+    #         if goldToMove and best_value < eval_child:
+    #             best_value = eval_child
+    #             action_target = action
+    #             alpha = max(alpha, best_value)
+    #             if beta <= alpha:
+    #                 break
+    #         elif (not goldToMove) and best_value > eval_child:
+    #             best_value = eval_child
+    #             action_target = action
+    #             beta = min(beta, best_value)
+    #             if beta <= alpha:
+    #                 break
+    #     return best_value, action_target
 
     # def zobristHashing(self, board):
     #     calculateHash(gameState.board)
 
-
-    def calculateHash(self,board):
+    def calculateHash(self, board):
         """calculates the Zobrist hash for the current board"""
         hash = 0
         for r in range(len(board)):  # number of rows
             for c in range(len(board[0])):  # number of columns
                 piece = board[r][c]
-                if piece!="-":
+                if piece != "-":
                     hash ^= self.table[r][c][self.calculateIndex(piece)]
         return hash
 
-
-    def calculateIndex(self,piece):
+    def calculateIndex(self, piece):
         """calculate the index for every piece-> empty = -1, silver = 0, gold=1, flagShip = 2"""
-        if piece =="-":
-            return -1
-        elif piece =="sP":
+        if piece == "sP":
             return 0
-        elif piece =="gP":
+        elif piece == "gP":
             return 1
         else:
             return 2
+
+        def retrieve(self, hashKey):
+            n = self.TT.get(hashKey)
+            if n is not None:
+                # print("exist hash stored")
+                return n
+            return -1
     # def negaMaxAlphaBeta(self, depth, gameState, stillPlay, goldToMove, alpha, beta):
-    #     self.node_expanded += 1
+    #     self.visitedNode += 1
     #     # print("gioca ancora in aI:",stillPlay)
     #     if depth == self.maxDepth or not stillPlay:
     #         return self.evaluationFunction(gameState, gameState.goldToMove), ""

@@ -3,6 +3,10 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/BreakthruIS&amp;G.iml" filepath="$PROJECT_DIR$/.idea/BreakthruIS&amp;G.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/BreakthruISG.iml" filepath="$PROJECT_DIR$/.idea/BreakthruISG.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../.idea/PycharmProjects.iml" filepath="$PROJECT_DIR$/../.idea/PycharmProjects.iml" />
+      <module fileurl="file://$USER_HOME$/OneDrive/Desktop/evo-pawness-master/.idea/evo-pawness.iml" filepath="$USER_HOME$/OneDrive/Desktop/evo-pawness-master/.idea/evo-pawness.iml" />
+      <module fileurl="file://$USER_HOME$/OneDrive/Desktop/khsit/.idea/khsit.iml" filepath="$USER_HOME$/OneDrive/Desktop/khsit/.idea/khsit.iml" />
     </modules>
   </component>
 </project>

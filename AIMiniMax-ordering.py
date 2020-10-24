@@ -17,7 +17,7 @@ class AI():
         self.ControlGold = True
         self.maxDepth = MAXDEPTH
         self.player_turn = player_turn
-        self.node_expanded = 0
+        self.visitedNode = 0
         self.timeLimit=100
 
     def evaluationFunction(self, gameState, goldToMove):
@@ -38,14 +38,14 @@ class AI():
     def chooseMove(self, state):
         gc.collect()
         """try to predict a move using minmax algorithm"""
-        self.node_expanded = 0
+        self.visitedNode = 0
         start_time = time.time()
         print("AI is calculating the next move")
         gameState = deepcopy(state)
 
         eval_score, selectedMove = self.miniMaxAlphaBeta(0, gameState, gameState.stillPlay, gameState.goldToMove,
                                                          float('-inf'), float('inf'),start_time)
-        print("AI finished, value = %d, visited node: %d" % (eval_score, self.node_expanded))
+        print("AI finished, value = %d, visited node: %d" % (eval_score, self.visitedNode))
         timeSpent = time.time() - start_time
         self.timeRequired += timeSpent
         self.timeRequired = round(self.timeRequired, 3)
@@ -69,7 +69,7 @@ class AI():
         # winMoves = gameState.getSpecificalMoves(gameState.flagShipPosition[0], gameState.flagShipPosition[1])
         # if not stillPlay:
 
-        self.node_expanded += 1
+        self.visitedNode += 1
         # print("gioca ancora in aI:",stillPlay)
         if depth == self.maxDepth or not stillPlay:
             return self.evaluationFunction(gameState, gameState.goldToMove), ""
@@ -77,38 +77,24 @@ class AI():
         for move in captureMoves:
             sortedMoves.append(move)
 
-        # #move ordering
-        # scoreList = []
-        # for action in sortedMoves:
-        #     order_state = self.nextState(action, gameState)
-        #     score = self.evaluationFunction(order_state, order_state.goldToMove)
-        #     scoreList.append(score)
-        # sortedMoves = list(zip(scoreList, sortedMoves))
-        # # sortedMoves = list(movesWithScores)
-        # if goldToMove:
-        #     sortedMoves.sort(key=lambda mv: mv[0], reverse=True)
-        # else:
-        #     sortedMoves.sort(key=lambda mv: mv[0], reverse=False)
-        # # print(sortedMoves)
-        # sortedMoves = [move for _, move in sortedMoves]
-        # # print(sortedMoves)
-        # if not gameState.goldToMove:
-        #     sortedMoves = sortedMoves[::-1]
+        #move ordering
+        scoreList = []
+        for action in sortedMoves:
+            order_state = self.nextState(action, gameState)
+            score = self.evaluationFunction(order_state, order_state.goldToMove)
+            scoreList.append(score)
+        sortedMoves = list(zip(scoreList, sortedMoves))
+        # sortedMoves = list(movesWithScores)
+        if goldToMove:
+            sortedMoves.sort(key=lambda mv: mv[0], reverse=True)
+        else:
+            sortedMoves.sort(key=lambda mv: mv[0], reverse=False)
+        # print(sortedMoves)
+        sortedMoves = [move for _, move in sortedMoves]
+        # print(sortedMoves)
+        if not gameState.goldToMove:
+            sortedMoves = sortedMoves[::-1]
 
-
-
-        # print("lunghezza",len(sortedMoves))
-        # vMoves = len(sortedMoves)
-        # possibleMoves = dict(zip(range(vMoves), validMoves))
-        # print(vMoves)
-        # cMoves = dict(zip(range(cMoves),
-        #                   captureMoves))  # TODO togliere mosse sovrascr-> cambiare nella funzione che genera le mosse
-        # print(len(possibleMoves), len(cMoves))
-        # possibleMoves.update(cMoves)
-        # print(len(cMoves),len(vMoves),len(possibleMoves))
-        # possibleCapture = dict(captureMoves[i:i + 2] for i in range(0, len(captureMoves), 2))
-        # key_of_validMoves = list(possibleMoves.keys())
-        # random.shuffle(key_of_validMoves)  # randomness
         best_value = float('-inf') if goldToMove else float('inf')
         action_target = ""
 
@@ -139,7 +125,7 @@ class AI():
 
     # def miniMaxABIDD(self, depth, gameState, stillPlay, goldToMove, alpha, beta):
     #
-    #     self.node_expanded += 1
+    #     self.visitedNode += 1
     #     # print("gioca ancora in aI:",stillPlay)
     #     if depth == self.maxDepth or not stillPlay:
     #         return self.evaluationFunction(gameState, gameState.goldToMove), ""
@@ -173,7 +159,7 @@ class AI():
     #     return best_value, action_target
 
     # def negaMaxAlphaBeta(self, depth, gameState, stillPlay, goldToMove, alpha, beta):
-    #     self.node_expanded += 1
+    #     self.visitedNode += 1
     #     # print("gioca ancora in aI:",stillPlay)
     #     if depth == self.maxDepth or not stillPlay:
     #         return self.evaluationFunction(gameState, gameState.goldToMove), ""
