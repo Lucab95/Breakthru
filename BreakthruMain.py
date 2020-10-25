@@ -5,9 +5,9 @@ from pygame import font
 
 import GameState
 import pygame as p
-import AIModel, transp
-import AIMiniMaxSend
+import AIModel
 from Move import Move
+import sys
 
 WIDTH = HEIGHT = 512
 INFOWIDTH = 400
@@ -34,14 +34,39 @@ def main():
     print(gameState.board)
     loadImages()
     running = True
+    runningMenu = True
     clickedSQ = ()  # tracks the last user's click (row,col)
     playerClicks = []  # track the clicks [(x,y),(x',y')]
 
     # initialize the AI Object
     AI = AIModel.AI(maxDepth,moveOrdering)
-    AI.ControlGold = True
-
+    AI.ControlGold = 0
     AITurn = True
+
+    while runningMenu:
+        pos = drawMenu(screen)
+        for e in p.event.get():
+            if e.type == p.QUIT:
+                running = False
+                p.quit()
+                sys.exit()
+            if e.type == p.MOUSEBUTTONDOWN:
+                location = p.mouse.get_pos()  # get x,y location of mouse
+                if pos[0].collidepoint(location):
+                    AI.ControlGold = 0
+                    runningMenu = False
+                elif pos[1].collidepoint(location):
+                    AI.ControlGold = 1
+                    runningMenu =False
+                elif pos[2].collidepoint(location):
+                    AI.ControlGold = 2
+                    runningMenu =False
+        screen.fill(p.Color("black"))
+        drawMenu(screen)
+        clock.tick(MAX_FPS)
+        p.display.flip()
+
+
     while running:
         requiredTime = AI.timeRequired
         drawGameState(screen, gameState, validMoves, captureMoves, clickedSQ, requiredTime)
@@ -50,8 +75,16 @@ def main():
                 for e in p.event.get():
                     if e.type == p.QUIT:
                         running = False
-
-                    elif gameState.goldToMove and AI.ControlGold and AITurn:
+                    elif gameState.goldToMove and AI.ControlGold == 1 and AITurn:
+                        AITurn = False
+                        move = AI.nextAiMove(gameState)
+                        if move != "":
+                            gameState.makeMove(move)
+                        drawGameState(screen, gameState, validMoves, captureMoves, clickedSQ, requiredTime)
+                        moveMade = True
+                        clickedSQ = ()  # reset
+                        playerClicks = []
+                    elif not gameState.goldToMove and AI.ControlGold == 2 and AITurn:
                         AITurn = False
                         move = AI.nextAiMove(gameState)
                         if move != "":
@@ -78,7 +111,7 @@ def main():
                             playerClicks.append(clickedSQ)  # append first and second clicks
 
                         if len(playerClicks) == 2:  # 2nd click case
-                            move = Move.Move(playerClicks[0], playerClicks[1], gameState.board)
+                            move = Move(playerClicks[0], playerClicks[1], gameState.board)
                             if len(captureMoves) == 0 and len(validMoves) == 0:
                                 print("staleMate")
                             if move in validMoves:
@@ -128,21 +161,31 @@ def main():
 
 
 
+def drawMenu(screen):
+    center = p.display.get_surface().get_size()[0]/2 -LABEL*2
+    font = p.font.SysFont("rockwellgrassettocorsivo", 40)
+    text = font.render("BreakThru", True, p.Color("blue"))
+    textRect = text.get_rect()
+    textRect.center = (WIDTH-25, SQ_SIZE*1)
+    screen.blit(text, textRect)
+    font = p.font.SysFont("rockwellgrassettocorsivo", 20)
+    pos1 = p.draw.rect(screen, p.Color("white"), p.Rect(center, (2 * SQ_SIZE), 200, 75), 2)
+    text = font.render("Player vs Player", True, p.Color("blue"))
+    textRect = text.get_rect()
+    textRect.center = (pos1[0]+100, pos1[1]+35)
+    screen.blit(text, textRect)
+    pos2 = p.draw.rect(screen, p.Color("white"), p.Rect(center, (5 * SQ_SIZE), 200, 75), 2)
+    text = font.render("AI vs Player", True, p.Color("blue"))
+    textRect = text.get_rect()
+    textRect.center = (pos2[0]+100, pos2[1]+35)
+    screen.blit(text, textRect)
+    pos3 = p.draw.rect(screen, p.Color("white"), p.Rect(center, (8 * SQ_SIZE), 200, 75), 2)
+    text = font.render("Player vs AI", True, p.Color("blue"))
+    textRect = text.get_rect()
+    textRect.center = (pos3[0]+100, pos3[1]+35)
+    screen.blit(text, textRect)
+    return pos1,pos2,pos3
 
-def highlightSquares(screen, gameState, moves, sqSelected, color):
-    """higlights selected piece possible moves"""
-    if sqSelected != ():
-        r, c, = sqSelected
-        if gameState.board[r][c][0] == (
-                'g' if gameState.goldToMove else 's'):  # selected Square is a piece that can be moved
-            s = p.Surface((SQ_SIZE, SQ_SIZE))
-            s.set_alpha(100)
-            s.fill(p.Color('green'))
-            screen.blit(s, (c * SQ_SIZE + LABEL, r * SQ_SIZE + LABEL))
-            s.fill(color)
-            for move in moves:
-                if move.startRow == r and move.startCol == c:  # all the moves that belong to the pawn in r,c
-                    screen.blit(s, (move.endCol * SQ_SIZE + LABEL, move.endRow * SQ_SIZE + LABEL))
 
 
 
@@ -218,6 +261,21 @@ def loadImages():
     pieces = ["gP", "sP", "gFS"]
     for piece in pieces:
         IMAGES[piece] = p.transform.scale(p.image.load("images/" + piece + ".png"), (SQ_SIZE, SQ_SIZE))
+
+def highlightSquares(screen, gameState, moves, sqSelected, color):
+    """higlights selected piece possible moves"""
+    if sqSelected != ():
+        r, c, = sqSelected
+        if gameState.board[r][c][0] == (
+                'g' if gameState.goldToMove else 's'):  # selected Square is a piece that can be moved
+            s = p.Surface((SQ_SIZE, SQ_SIZE))
+            s.set_alpha(100)
+            s.fill(p.Color('green'))
+            screen.blit(s, (c * SQ_SIZE + LABEL, r * SQ_SIZE + LABEL))
+            s.fill(color)
+            for move in moves:
+                if move.startRow == r and move.startCol == c:  # all the moves that belong to the pawn in r,c
+                    screen.blit(s, (move.endCol * SQ_SIZE + LABEL, move.endRow * SQ_SIZE + LABEL))
 
 if __name__ == "__main__":
     main()
